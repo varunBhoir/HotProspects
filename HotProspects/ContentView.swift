@@ -8,34 +8,40 @@
 
 import SwiftUI
 
-class User: ObservableObject {
-    @Published var name = "Riya Kasbekar"
-}
-
-struct EditView: View {
-    @EnvironmentObject var user: User
-    
-    var body: some View {
-        TextField("Name", text: $user.name)
-    }
-}
-
-struct DisplayView: View {
-    @EnvironmentObject var user: User
-    
-    var body: some View {
-        Text(user.name)
-    }
-}
 
 struct ContentView: View {
-    let user = User()
+    @State private var selectedTab = "varun"
+    
     var body: some View {
-        VStack {
-            EditView()
-            DisplayView()
+        TabView(selection: $selectedTab) {
+            VStack {
+                Text("Varun Bhoir")
+                Text("Tap here to see his crush")
+                    .padding()
+                    .onTapGesture {
+                        self.selectedTab = "riya"
+                }
+            }
+            .tabItem {
+                Image(systemName: "person")
+                Text("varun")
+            }
+            .tag("varun")
+            
+            VStack {
+                Text("Riya Kasbekar")
+                Text("Tap here to see her crush")
+                    .padding()
+                    .onTapGesture {
+                        self.selectedTab = "varun"
+                }
+            }
+            .tabItem {
+                Image(systemName: "person.fill")
+                Text("Riya")
+            }
+            .tag("riya")
         }
-        .environmentObject(user)
     }
 }
 
