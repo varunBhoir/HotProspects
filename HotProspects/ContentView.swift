@@ -8,27 +8,16 @@
 
 import SwiftUI
 
-class DelayedUpdater: ObservableObject {
-    var count = 0 {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-    
-    init() {
-        for i in 1...10 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i)) {
-                self.count += 1
-            }
-        }
-    }
-}
-
-
 struct ContentView: View {
-    @ObservedObject var updater = DelayedUpdater()
+    
     var body: some View {
-        Text("\(updater.count)")
+        Image("example")
+            .interpolation(.none)
+            .resizable()
+            .scaledToFit()
+            .frame(maxHeight: .infinity)
+            .background(Color.black)
+            .edgesIgnoringSafeArea(.all)
     }
 }
 
