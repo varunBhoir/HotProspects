@@ -6,35 +6,37 @@
 //  Copyright © 2021 varun bhoir. All rights reserved.
 //
 
+import UserNotifications
 import SwiftUI
 
 struct ContentView: View {
-    @State private var backgroundColor = Color.red
+    
     
     var body: some View {
         VStack {
-            Text("Riya Kasbekar")
-                .padding()
-                .background(backgroundColor)
-            Text("Change color")
-                .padding()
-                .contextMenu {
-                    Button(action: {
-                        self.backgroundColor = .blue
-                    }) {
-                        Text("Blue")
-                        Image(systemName: "checkmark.circle.fill")
+            Button("Request notifications") {
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                    if success {
+                        print("All set")
+                    } else if let error = error {
+                        print(error.localizedDescription)
                     }
-                    Button(action: {
-                        self.backgroundColor = .yellow
-                    }) {
-                        Text("Yellow")
-                    }
-                    Button(action: {
-                        self.backgroundColor = .green
-                    }) {
-                        Text("Green")
-                    }
+                }
+            }
+            Button("Schedule notifications") {
+                let content = UNMutableNotificationContent()
+                content.title = "February is almost over"
+                content.subtitle = "Checkout some cute gifts for your loved ones"
+                content.sound = UNNotificationSound.default
+                
+                // show this notification 5 seconds from now
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+                
+                // choose random identifier
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                
+                // add our notification request
+                UNUserNotificationCenter.current().add(request)
             }
         }
     }
