@@ -6,6 +6,7 @@
 //  Copyright © 2021 varun bhoir. All rights reserved.
 //
 
+import CodeScanner
 import SwiftUI
 
 enum FilterType {
@@ -14,6 +15,7 @@ enum FilterType {
 
 struct ProspectsView: View {
     @EnvironmentObject var prospects: Prospects
+    @State private var isShowingScanner = false
     let filter: FilterType
     var title: String {
         switch filter {
@@ -48,18 +50,38 @@ struct ProspectsView: View {
                         Text(prospect.emailAddress)
                             .foregroundColor(.secondary)
                     }
+                    .contextMenu {
+                        Button(prospect.isContacted ? "Mark Uncontacted" : "Mark Contacted") {
+                            self.prospects.toggle(prospect)
+                        }
+                    }
                 }
             }
             .navigationBarTitle(title)
             .navigationBarItems(trailing: Button(action: {
-                let prospect = Prospect()
-                prospect.name = "Varun Bhoir"
-                prospect.emailAddress = "bhoirvarun6@gmail.com"
-                self.prospects.people.append(prospect)
+                self.isShowingScanner = true
             }) {
                 Image(systemName: "qrcode.viewfinder")
                 Text("Scan")
             })
+        }
+        .sheet(isPresented: $isShowingScanner) {
+            CodeScannerView(codeTypes: [.qr], simulatedData: "Varun Bhoir\nbhoirvarun6@gmail.com", completion: self.handleScan)
+        }
+    }
+    
+    func handleScan(result: Result<String, CodeScannerView.ScanError>) {
+        self.isShowingScanner = false
+        switch result {
+        case .success(let code):
+            let details = code.components(separatedBy: "\n")
+            guard details.count == 2 else { return }
+            let prospect = Prospect()
+            prospect.name = details[0]
+            prospect.emailAddress = details[1]
+            prospects.people.append(prospect)
+        case .failure(let error):
+            print("Scanning failed- \(error.localizedDescription)")
         }
     }
 }
