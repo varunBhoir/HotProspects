@@ -16,14 +16,38 @@ class Prospect: Identifiable, Codable {
 }
 
 class Prospects: ObservableObject {
-    @Published var people: [Prospect]
+    @Published private(set) var people: [Prospect] {
+        didSet {
+            saveData()
+        }
+    }
+    static let saveKey = "SavePeople"
     
     init() {
+        if let data = UserDefaults.standard.data(forKey: Prospects.saveKey) {
+            if let decodedPeople = try? JSONDecoder().decode([Prospect].self, from: data) {
+                people = decodedPeople
+                return
+            }
+        }
         people = []
     }
     
     func toggle(_ prospect: Prospect) {
         objectWillChange.send()
         prospect.isContacted.toggle()
+        saveData()
+    }
+    
+    func add(_ prospect: Prospect) {
+        people.append(prospect)
+    }
+    
+    private func saveData() {
+        if let encodedPeople = try? JSONEncoder().encode(people) {
+            UserDefaults.standard.set(encodedPeople, forKey: Prospects.saveKey)
+        } else {
+            print("Failed to encode the people")
+        }
     }
 }
