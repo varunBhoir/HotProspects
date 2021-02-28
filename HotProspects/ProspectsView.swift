@@ -10,6 +10,10 @@ import CodeScanner
 import SwiftUI
 import UserNotifications
 
+enum SortType {
+    case mostRecent, name
+}
+
 enum FilterType {
     case none, contacted, uncontected
 }
@@ -17,7 +21,9 @@ enum FilterType {
 struct ProspectsView: View {
     @EnvironmentObject var prospects: Prospects
     @State private var isShowingScanner = false
+    @State private var showSortedActionSheet = false
     let filter: FilterType
+    @State var sortby: SortType = .name
     var title: String {
         switch filter {
         case .none:
@@ -36,19 +42,38 @@ struct ProspectsView: View {
         case .contacted:
             return prospects.people.filter { $0.isContacted }
         case .uncontected:
-            return prospects.people.filter { !$0.isContacted}
+            return prospects.people.filter { !$0.isContacted }
+        }
+    }
+    
+    var filteredSortedProspects: [Prospect] {
+        switch sortby {
+        case .mostRecent:
+            return filteredProspects.sorted {
+                $0.date > $1.date
+            }
+        case .name:
+            return filteredProspects.sorted {
+                $0.name < $1.name
+            }
         }
     }
     
     var body: some View {
         NavigationView {
             List {
-                ForEach(filteredProspects) { prospect in
-                    VStack(alignment: .leading) {
-                        Text(prospect.name)
-                            .font(.headline)
-                        Text(prospect.emailAddress)
-                            .foregroundColor(.secondary)
+                ForEach(filteredSortedProspects) { prospect in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(prospect.name)
+                                .font(.headline)
+                            Text(prospect.emailAddress)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if self.filter == .none {
+                            Image(systemName: prospect.isContacted ? "envelope" : "envelope.badge")
+                        }
                     }
                     .contextMenu {
                         Button(prospect.isContacted ? "Mark Uncontacted" : "Mark Contacted") {
@@ -63,15 +88,29 @@ struct ProspectsView: View {
                 }
             }
             .navigationBarTitle(title)
-            .navigationBarItems(trailing: Button(action: {
-                self.isShowingScanner = true
-            }) {
-                Image(systemName: "qrcode.viewfinder")
-                Text("Scan")
+            .navigationBarItems(leading: Button("Sort") {
+                self.showSortedActionSheet = true
+                }, trailing:  Button(action: {
+                    self.isShowingScanner = true
+                }) {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Scan")
             })
         }
         .sheet(isPresented: $isShowingScanner) {
             CodeScannerView(codeTypes: [.qr], simulatedData: "Varun Bhoir\nbhoirvarun6@gmail.com", completion: self.handleScan)
+        }
+        .actionSheet(isPresented: $showSortedActionSheet) {
+            return ActionSheet(title: Text("Sort People By..."), buttons:
+                [
+                    .default(Text((self.sortby == .mostRecent ? "✓ " : "") + "Most Recent")) {
+                        self.sortby = .mostRecent
+                    },
+                    .default(Text((self.sortby == .name ? "✓ " : "") + "Name")) {
+                        self.sortby = .name
+                    }
+                ]
+            )
         }
     }
     
@@ -127,6 +166,6 @@ struct ProspectsView: View {
 
 struct ProspectsView_Previews: PreviewProvider {
     static var previews: some View {
-        ProspectsView(filter: .none)
+        ProspectsView(filter: .none, sortby: .name).environmentObject(Prospects())
     }
 }
